@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   regression-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     services:
@@ -110,6 +110,12 @@ jobs:
 
           cat server.log
           exit 1
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+
+      - name: Run sanity tests
+        run: npm run test:sanity
 
       - name: Run regression tests
         run: npm run test:regression

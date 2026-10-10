@@ -7,7 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:ai": "playwright test tests/ai --workers=1",
     "test:regression": "playwright test --grep-invert @ai",
-    "test:all": "npm run test:regression && npm run test:ai"
+    "test:all": "npm run test:regression && npm run test:ai",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:sanity": "playwright test --grep @sanity"
   },
   "keywords": [],
   "author": "",
