@@ -3,9 +3,13 @@ name: Healthcare Quality Automation
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   regression-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -18,9 +22,9 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
       moto:
         image: motoserver/moto:latest
@@ -37,6 +41,7 @@ jobs:
       AWS_ACCESS_KEY_ID: testing
       AWS_SECRET_ACCESS_KEY: testing
       AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: true
 
     steps:
       - name: Checkout repository
@@ -68,10 +73,20 @@ jobs:
           );
           SQL
 
+      - name: Wait for Moto
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5000/ >/dev/null; then
+              echo "Moto is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Moto failed to start"
+          exit 1
+
       - name: Initialize simulated S3 and SQS
         run: |
-          python3 -m pip install --user awscli
-
           aws --endpoint-url http://127.0.0.1:5000 \
             s3 mb s3://healthcare-claims-local
 
@@ -86,7 +101,8 @@ jobs:
       - name: Wait for healthcare API
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:3000/health; then
+            if curl -fsS http://127.0.0.1:3000/health; then
+              echo "Healthcare API is ready"
               exit 0
             fi
             sleep 2
