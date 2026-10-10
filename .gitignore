@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Playwright generated files
+playwright-report/
+test-results/
+
+# AI-generated reports
+reports/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+
+# Coverage
+coverage/

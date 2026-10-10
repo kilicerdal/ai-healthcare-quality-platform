@@ -1,0 +1,110 @@
+name: Healthcare Quality Automation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  regression-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: healthcare_quality
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      moto:
+        image: motoserver/moto:latest
+        ports:
+          - 5000:5000
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: healthcare_quality
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+      AWS_DEFAULT_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Initialize PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d healthcare_quality <<'SQL'
+          CREATE TABLE IF NOT EXISTS claims (
+            claim_id VARCHAR(50) PRIMARY KEY,
+            member_id VARCHAR(50) NOT NULL,
+            provider_id VARCHAR(50) NOT NULL,
+            service_date DATE NOT NULL,
+            diagnosis_code VARCHAR(20) NOT NULL,
+            claim_amount NUMERIC(12,2) NOT NULL,
+            status VARCHAR(30) NOT NULL DEFAULT 'RECEIVED',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+          SQL
+
+      - name: Initialize simulated S3 and SQS
+        run: |
+          python3 -m pip install --user awscli
+
+          aws --endpoint-url http://127.0.0.1:5000 \
+            s3 mb s3://healthcare-claims-local
+
+          aws --endpoint-url http://127.0.0.1:5000 \
+            sqs create-queue \
+            --queue-name healthcare-claims-queue
+
+      - name: Start healthcare API
+        run: |
+          node app/server.js > server.log 2>&1 &
+
+      - name: Wait for healthcare API
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat server.log
+          exit 1
+
+      - name: Run regression tests
+        run: npm run test:regression
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            server.log
+          retention-days: 7
