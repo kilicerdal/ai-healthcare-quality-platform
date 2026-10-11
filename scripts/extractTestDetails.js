@@ -21,7 +21,17 @@ function extractTests(suites, suiteName) {
             (sum, result) => sum + (result.duration || 0),
             0
           ),
-          error: latest?.error?.message || ''
+          error: attempts
+            .flatMap(result => [
+              ...(result.errors || []),
+              ...(result.error ? [result.error] : [])
+            ])
+            .map(error => error.message || String(error))
+            .filter(Boolean)
+            .filter((message, index, messages) =>
+              messages.indexOf(message) === index
+            )
+            .join('\n\n')
         });
       }
     }

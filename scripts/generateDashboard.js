@@ -295,6 +295,7 @@ ${suites.map(s => `
   <th>Suite</th>
   <th>Status</th>
   <th>Duration</th>
+  <th>Failure Details</th>
 </tr>
 </thead>
 <tbody>
@@ -306,6 +307,14 @@ ${testDetails.map(t => `
     ${escapeHtml(displayStatus(t.status))}
   </td>
   <td>${Number(t.duration || 0)} ms</td>
+  <td>
+    ${t.error
+      ? `<details>
+           <summary>View failure</summary>
+           <pre style="white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(t.error)}</pre>
+         </details>`
+      : '—'}
+  </td>
 </tr>
 `).join('')}
 </tbody>
