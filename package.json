@@ -11,7 +11,7 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:sanity": "playwright test --grep @sanity",
     "test:contract": "playwright test tests/contract",
-    "dashboard": "node scripts/generateDashboard.js"
+    "dashboard": "node scripts/extractTestDetails.js && node scripts/generateDashboard.js"
   },
   "keywords": [],
   "author": "",
