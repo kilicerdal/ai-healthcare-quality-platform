@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Generated quality dashboard reports
+reports/dashboard/

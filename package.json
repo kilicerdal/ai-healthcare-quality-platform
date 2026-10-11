@@ -10,7 +10,8 @@
     "test:all": "npm run test:regression && npm run test:ai",
     "test:smoke": "playwright test --grep @smoke",
     "test:sanity": "playwright test --grep @sanity",
-    "test:contract": "playwright test tests/contract"
+    "test:contract": "playwright test tests/contract",
+    "dashboard": "node scripts/generateDashboard.js"
   },
   "keywords": [],
   "author": "",
