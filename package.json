@@ -9,7 +9,8 @@
     "test:regression": "playwright test --grep-invert @ai",
     "test:all": "npm run test:regression && npm run test:ai",
     "test:smoke": "playwright test --grep @smoke",
-    "test:sanity": "playwright test --grep @sanity"
+    "test:sanity": "playwright test --grep @sanity",
+    "test:contract": "playwright test tests/contract"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.64.0",
-    "nodemon": "^3.1.14"
+    "ajv": "^8.20.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

@@ -42,13 +42,15 @@ A Senior SDET portfolio project demonstrating API automation, database testing, 
 |---|---:|---|
 | Smoke | 2 | npm run test:smoke |
 | Sanity | 4 | npm run test:sanity |
-| Regression | 21 | npm run test:regression |
+| Regression | 23 | npm run test:regression |
 | AI | 3 | npm run test:ai |
+| Contract | 2 | npm run test:contract |
 
-**24 unique automated tests.** Smoke and sanity tests overlap with regression.
+**26 unique automated tests.** Smoke and sanity tests overlap with regression.
 
 ## Test Coverage
 
+- JSON Schema contract validation using AJV
 - Healthcare API health checks
 - Claim creation and retrieval
 - Missing required field validation
