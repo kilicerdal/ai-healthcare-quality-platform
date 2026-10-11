@@ -141,6 +141,75 @@ ${auditReport.findings.map(f => `
 </p>
 `;
 
+
+const liveAuditFile = path.join(reportDir, 'live-ai-audit-results.json');
+
+const liveAudit = fs.existsSync(liveAuditFile)
+  ? JSON.parse(fs.readFileSync(liveAuditFile, 'utf8'))
+  : null;
+
+const liveAuditSection = liveAudit
+  ? `
+<h2>Live Ollama Scenario Audit</h2>
+
+<p class="subtitle">
+  Source: ${escapeHtml(liveAudit.source)}
+  — Accepted AI-generated scenarios after generator validation.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Live Scenarios Audited</div>
+    <div class="value blue">${liveAudit.totalAudited}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Matching Expectations</div>
+    <div class="value green">${liveAudit.matched}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Incorrect Expectations</div>
+    <div class="value red">${liveAudit.mismatched}</div>
+  </div>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>AI-Generated Scenario</th>
+  <th>AI Expected Status</th>
+  <th>Rule-Based Status</th>
+  <th>Audit Result</th>
+</tr>
+</thead>
+<tbody>
+${liveAudit.findings.map(f => `
+<tr>
+  <td>${escapeHtml(f.name)}</td>
+  <td>${escapeHtml(f.aiExpectedStatus)}</td>
+  <td>${escapeHtml(f.expectedStatus)}</td>
+  <td class="${f.hallucinationDetected ? 'red' : 'green'}">
+    ${f.hallucinationDetected ? 'MISMATCH' : 'MATCH'}
+  </td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+
+<p class="subtitle">
+  Results reflect validated Ollama output, not raw model accuracy.
+  Generated: ${escapeHtml(liveAudit.generatedAt)}
+</p>
+`
+  : `
+<h2>Live Ollama Scenario Audit</h2>
+<p class="subtitle">
+  No live audit report available.
+  Run the live scenario auditor test to generate one.
+</p>
+`;
+
 const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -347,6 +416,7 @@ ${suites.map(s => `
 
 
 ${auditSection}
+${liveAuditSection}
 <h2>Individual Test Results</h2>
 
 <input
