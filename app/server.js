@@ -39,6 +39,32 @@ app.post('/api/claims', async (req, res) => {
       });
     }
 
+    // Validate claim amount
+    if (
+      typeof claimAmount !== 'number' ||
+      !Number.isFinite(claimAmount) ||
+      claimAmount <= 0
+    ) {
+      return res.status(400).json({
+        error: 'Claim amount must be a positive number'
+      });
+    }
+
+    // Validate service date
+    const validDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(serviceDate);
+
+    const parsedDate = new Date(serviceDate);
+
+    if (
+      !validDateFormat ||
+      Number.isNaN(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== serviceDate
+    ) {
+      return res.status(400).json({
+        error: 'Invalid service date'
+      });
+    }
+
     const claimId = `CLM-${crypto.randomUUID()}`;
 
     // Insert claim into PostgreSQL
