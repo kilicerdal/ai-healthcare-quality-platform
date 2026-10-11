@@ -73,6 +73,74 @@ function displayStatus(status) {
 }
 
 
+
+const auditFile = path.join(reportDir, 'ai-audit-results.json');
+
+const auditReport = fs.existsSync(auditFile)
+  ? JSON.parse(fs.readFileSync(auditFile, 'utf8'))
+  : null;
+
+const auditSection = auditReport
+  ? `
+<h2>AI Scenario Audit</h2>
+
+<p class="subtitle">
+  Source: ${escapeHtml(auditReport.source)}
+  — ${escapeHtml(auditReport.description)}
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Scenarios Audited</div>
+    <div class="value blue">${auditReport.totalAudited}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Matching Expectations</div>
+    <div class="value green">${auditReport.matched}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Incorrect Expectations Detected</div>
+    <div class="value red">${auditReport.mismatched}</div>
+  </div>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>Scenario</th>
+  <th>Provided HTTP Status</th>
+  <th>Rule-Based HTTP Status</th>
+  <th>Finding</th>
+</tr>
+</thead>
+<tbody>
+${auditReport.findings.map(f => `
+<tr>
+  <td>${escapeHtml(f.name)}</td>
+  <td>${escapeHtml(f.aiExpectedStatus)}</td>
+  <td>${escapeHtml(f.expectedStatus)}</td>
+  <td class="${f.hallucinationDetected ? 'red' : 'green'}">
+    ${escapeHtml(f.reason)}
+  </td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+
+<p class="subtitle">
+  These metrics describe the recorded audit sample.
+  They do not measure the accuracy of the live AI model.
+</p>
+`
+  : `
+<h2>AI Scenario Audit</h2>
+<p class="subtitle">
+  No audit report available. Run the scenario auditor test to generate one.
+</p>
+`;
+
 const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -278,6 +346,7 @@ ${suites.map(s => `
 </table>
 
 
+${auditSection}
 <h2>Individual Test Results</h2>
 
 <input
