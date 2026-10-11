@@ -183,6 +183,73 @@ const html = `
   </div>
 </div>
 
+
+<h2>Quality Overview</h2>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:35px;">
+
+  <div class="card">
+    <h3>Overall Test Results</h3>
+
+    <div style="
+      width:180px;
+      height:180px;
+      border-radius:50%;
+      margin:25px auto;
+      background:conic-gradient(
+        #4ade80 0% ${total ? passed / total * 100 : 0}%,
+        #f87171 ${total ? passed / total * 100 : 0}% ${total ? (passed + failed) / total * 100 : 0}%,
+        #facc15 ${total ? (passed + failed) / total * 100 : 0}% 100%
+      );
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    ">
+      <div style="
+        background:#1e293b;
+        width:125px;
+        height:125px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:24px;
+        font-weight:bold;
+      ">
+        ${passRate}%
+      </div>
+    </div>
+
+    <p style="text-align:center">
+      <span class="green">● Passed: ${passed}</span> |
+      <span class="red">● Failed: ${failed}</span>
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Test Suite Comparison</h3>
+
+    ${suites.map(s => `
+      <p>${s.name}: ${s.passed}/${s.total} passed</p>
+
+      <div style="
+        background:#334155;
+        height:25px;
+        border-radius:6px;
+        overflow:hidden;
+        margin-bottom:20px;
+      ">
+        <div style="
+          background:#4ade80;
+          width:${s.total ? s.passed / s.total * 100 : 0}%;
+          height:100%;
+        "></div>
+      </div>
+    `).join('')}
+  </div>
+
+</div>
+
 <h2>Test Suite Execution</h2>
 
 <table>
