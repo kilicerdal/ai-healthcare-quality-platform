@@ -5,6 +5,26 @@ const { SchemaValidator } = require('../validators/schemaValidator');
 const scenarioSchema = require('../schemas/aiScenario.schema.json');
 const { LiveScenarioAuditor } = require('./liveScenarioAuditor');
 
+function classifyAIFailure(error) {
+  if (error instanceof SyntaxError) return 'INVALID_JSON';
+
+  const message = error.message;
+
+  if (message.startsWith('Schema validation failed:'))
+    return 'SCHEMA_VALIDATION_FAILURE';
+
+  if (message.startsWith('AI business-rule validation failed:'))
+    return 'BUSINESS_RULE_MISMATCH';
+
+  if (message.includes('approved test plan'))
+    return 'TEST_PLAN_MISMATCH';
+
+  if (message.includes('Ollama'))
+    return 'MODEL_ERROR';
+
+  return 'OTHER_ERROR';
+}
+
 class AITestDataGenerator {
   constructor() {
     this.ai = new OllamaClient();
@@ -51,6 +71,20 @@ No Markdown. No explanations.
       fs.writeFileSync(
         path.join(reportDir, 'ai-generation-results.json'),
         JSON.stringify(generationReport, null, 2)
+      );
+    };
+
+    const saveHistory = () => {
+      const historyFile = path.join(
+        process.cwd(),
+        'reports/dashboard/ai-generation-history.jsonl'
+      );
+
+      fs.mkdirSync(path.dirname(historyFile), { recursive: true });
+
+      fs.appendFileSync(
+        historyFile,
+        JSON.stringify(generationReport) + '\n'
       );
     };
 
@@ -108,11 +142,13 @@ No Markdown. No explanations.
         generationReport.attempts.push({
           attempt,
           accepted: true,
-          reason: 'Schema, business-rule, and approved test-plan validation passed'
+          reason: 'Schema, business-rule, and approved test-plan validation passed',
+          category: 'ACCEPTED'
         });
 
         generationReport.accepted = true;
         saveReport();
+        saveHistory();
 
         console.log(`AI scenarios validated on attempt ${attempt}`);
 
@@ -122,7 +158,8 @@ No Markdown. No explanations.
         generationReport.attempts.push({
           attempt,
           accepted: false,
-          reason: error.message
+          reason: error.message,
+          category: classifyAIFailure(error)
         });
 
         saveReport();
@@ -132,6 +169,7 @@ No Markdown. No explanations.
         );
 
         if (attempt === maxAttempts) {
+          saveHistory();
           throw new Error(
             `AI scenario generation failed after ${maxAttempts} attempts`
           );

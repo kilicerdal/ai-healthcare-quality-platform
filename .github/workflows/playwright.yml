@@ -120,6 +120,10 @@ jobs:
       - name: Run regression tests
         run: npm run test:regression
 
+      - name: Run deterministic AI validation tests
+        run: |
+          npx playwright test tests/ai/aiGenerationRetry.spec.js tests/ai/businessRuleValidation.spec.js --workers=1
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7

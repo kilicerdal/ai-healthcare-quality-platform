@@ -490,6 +490,29 @@ ${suites.map(s => `
 ${auditSection}
 ${liveAuditSection}
 ${generationSection}
+<h2>AI Generation History</h2>
+<div id="ai-generation-history"></div>
+<script>
+fetch('ai-generation-history.jsonl')
+  .then(response => response.text())
+  .then(text => {
+    const sessions = text.trim().split('\\n').map(JSON.parse);
+    const attempts = sessions.flatMap(session => session.attempts);
+
+    const accepted = attempts.filter(a => a.accepted).length;
+    const rejected = attempts.filter(a => !a.accepted).length;
+
+    document.getElementById('ai-generation-history').innerHTML =
+      '<p>Generation sessions: ' + sessions.length + '</p>' +
+      '<p>Accepted attempts: ' + accepted + '</p>' +
+      '<p>Rejected attempts: ' + rejected + '</p>';
+  })
+  .catch(() => {
+    document.getElementById('ai-generation-history').textContent =
+      'Generation history unavailable.';
+  });
+</script>
+
 <h2>Individual Test Results</h2>
 
 <input
