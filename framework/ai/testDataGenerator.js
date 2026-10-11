@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { OllamaClient } = require('./ollamaClient');
 const { SchemaValidator } = require('../validators/schemaValidator');
 const scenarioSchema = require('../schemas/aiScenario.schema.json');
@@ -33,6 +35,24 @@ No Markdown. No explanations.
 
     const maxAttempts = 3;
 
+    const generationReport = {
+      source: 'raw-ollama-generation',
+      model: 'qwen2.5-coder:3b',
+      generatedAt: new Date().toISOString(),
+      attempts: [],
+      accepted: false
+    };
+
+    const saveReport = () => {
+      const reportDir = path.join(process.cwd(), 'reports/dashboard');
+      fs.mkdirSync(reportDir, { recursive: true });
+
+      fs.writeFileSync(
+        path.join(reportDir, 'ai-generation-results.json'),
+        JSON.stringify(generationReport, null, 2)
+      );
+    };
+
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const response = await this.ai.generate(prompt);
@@ -65,11 +85,28 @@ No Markdown. No explanations.
           }
         }
 
+        generationReport.attempts.push({
+          attempt,
+          accepted: true,
+          reason: 'Schema and expected-status validation passed'
+        });
+
+        generationReport.accepted = true;
+        saveReport();
+
         console.log(`AI scenarios validated on attempt ${attempt}`);
 
         return scenarios;
 
       } catch (error) {
+        generationReport.attempts.push({
+          attempt,
+          accepted: false,
+          reason: error.message
+        });
+
+        saveReport();
+
         console.log(
           `AI generation attempt ${attempt} failed: ${error.message}`
         );

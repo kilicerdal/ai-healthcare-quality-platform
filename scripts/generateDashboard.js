@@ -210,6 +210,78 @@ ${liveAudit.findings.map(f => `
 </p>
 `;
 
+
+const generationFile = path.join(
+  reportDir,
+  'ai-generation-results.json'
+);
+
+const generationReport = fs.existsSync(generationFile)
+  ? JSON.parse(fs.readFileSync(generationFile, 'utf8'))
+  : null;
+
+const generationSection = generationReport
+  ? `
+<h2>AI Generation Reliability</h2>
+
+<p class="subtitle">
+  Model: ${escapeHtml(generationReport.model)}
+  — Latest recorded generation session.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Generation Attempts</div>
+    <div class="value blue">${generationReport.attempts.length}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Accepted Attempts</div>
+    <div class="value green">
+      ${generationReport.attempts.filter(a => a.accepted).length}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Rejected Attempts</div>
+    <div class="value red">
+      ${generationReport.attempts.filter(a => !a.accepted).length}
+    </div>
+  </div>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>Attempt</th>
+  <th>Result</th>
+  <th>Validation Details</th>
+</tr>
+</thead>
+<tbody>
+${generationReport.attempts.map(a => `
+<tr>
+  <td>${escapeHtml(a.attempt)}</td>
+  <td class="${a.accepted ? 'green' : 'red'}">
+    ${a.accepted ? 'ACCEPTED' : 'REJECTED'}
+  </td>
+  <td>${escapeHtml(a.reason)}</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+
+<p class="subtitle">
+  Generated: ${escapeHtml(generationReport.generatedAt)}
+</p>
+`
+  : `
+<h2>AI Generation Reliability</h2>
+<p class="subtitle">
+  No generation report available.
+</p>
+`;
+
 const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -417,6 +489,7 @@ ${suites.map(s => `
 
 ${auditSection}
 ${liveAuditSection}
+${generationSection}
 <h2>Individual Test Results</h2>
 
 <input
