@@ -3,6 +3,7 @@ const path = require('path');
 const { OllamaClient } = require('./ollamaClient');
 const { SchemaValidator } = require('../validators/schemaValidator');
 const scenarioSchema = require('../schemas/aiScenario.schema.json');
+const { LiveScenarioAuditor } = require('./liveScenarioAuditor');
 
 class AITestDataGenerator {
   constructor() {
@@ -75,12 +76,31 @@ No Markdown. No explanations.
           );
         }
 
+        const auditor = new LiveScenarioAuditor();
+        const findings = auditor.audit(scenarios);
+
+        const mismatches = findings.filter(
+          (finding) => finding.hallucinationDetected
+        );
+
+        if (mismatches.length > 0) {
+          throw new Error(
+            `AI business-rule validation failed: ${
+              mismatches.map(
+                (finding) =>
+                  `${finding.name}: AI expected ${finding.aiExpectedStatus}, ` +
+                  `API rule expects ${finding.expectedStatus}`
+              ).join('; ')
+            }`
+          );
+        }
+
         const expectedStatuses = [201, 400, 400, 400, 201];
 
         for (let i = 0; i < scenarios.length; i++) {
           if (scenarios[i].expectedStatus !== expectedStatuses[i]) {
             throw new Error(
-              `Incorrect expected status in scenario ${i + 1}`
+              `Scenario ${i + 1} does not match the approved test plan`
             );
           }
         }
@@ -88,7 +108,7 @@ No Markdown. No explanations.
         generationReport.attempts.push({
           attempt,
           accepted: true,
-          reason: 'Schema and expected-status validation passed'
+          reason: 'Schema, business-rule, and approved test-plan validation passed'
         });
 
         generationReport.accepted = true;
