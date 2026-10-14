@@ -1,10 +1,11 @@
+
 {
   "name": "ai-healthcare-quality-platform",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "playwright test",
     "test:ai": "playwright test tests/ai --workers=1",
     "test:regression": "playwright test --grep-invert @ai",
     "test:all": "npm run test:regression && npm run test:ai",

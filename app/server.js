@@ -51,10 +51,13 @@ app.post('/api/claims', async (req, res) => {
     }
 
     // Validate service date
-    const validDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(serviceDate);
+   const validDateFormat =
+  typeof serviceDate === 'string' &&
+  /^\d{4}-\d{2}-\d{2}$/.test(serviceDate);
 
-    const parsedDate = new Date(serviceDate);
-
+const parsedDate = validDateFormat
+  ? new Date(serviceDate)
+  : new Date(NaN);
     if (
       !validDateFormat ||
       Number.isNaN(parsedDate.getTime()) ||
