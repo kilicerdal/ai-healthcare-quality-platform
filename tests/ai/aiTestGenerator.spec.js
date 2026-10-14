@@ -1,33 +1,43 @@
 const { test, expect } = require('@playwright/test');
-const { AITestGenerator } = require('../../framework/ai/testGenerator');
+const {
+  AITestGenerator
+} = require('../../framework/ai/testGenerator');
 
-test('@ai @regression Generate healthcare API test scenarios using local AI', async () => {
+test('@ai @regression Generate and validate healthcare API scenarios using Ollama', async () => {
   test.setTimeout(150000);
 
   const generator = new AITestGenerator();
 
   const requirements = `
-Healthcare Claims API:
+Healthcare Claims API
 
-Endpoint: POST /api/claims
+POST /api/claims:
+- Requires memberId, providerId, serviceDate,
+  diagnosisCode, and claimAmount.
+- Valid requests return HTTP 201.
+- Missing required fields return HTTP 400.
+- Negative or zero claim amounts return HTTP 400.
+- Invalid service dates return HTTP 400.
 
-Required fields:
-- memberId
-- providerId
-- serviceDate
-- diagnosisCode
-- claimAmount
-
-Successful requests return HTTP 201.
-Missing required fields return HTTP 400.
-Successfully created claims are stored in PostgreSQL.
+GET /api/claims/:claimId:
+- Existing claims return HTTP 200.
+- Nonexistent claims return HTTP 404.
 `;
 
-  const scenarios = await generator.generateTestScenarios(requirements);
+  const scenarios = await generator.generateTestScenarios(
+    requirements
+  );
 
-  console.log('\n===== AI GENERATED TEST SCENARIOS =====\n');
-  console.log(scenarios);
+  console.log('\n===== VALIDATED AI TEST SCENARIOS =====');
+  console.log(JSON.stringify(scenarios, null, 2));
 
-  expect(scenarios).toBeTruthy();
-  expect(scenarios.length).toBeGreaterThan(100);
+  expect(scenarios).toHaveLength(5);
+
+  for (const scenario of scenarios) {
+    expect(scenario.id).toBeTruthy();
+    expect(scenario.endpoint).toBeTruthy();
+    expect(scenario.description).toBeTruthy();
+    expect(Number.isInteger(scenario.expectedStatus)).toBe(true);
+    expect(scenario.testData).toBeDefined();
+  }
 });
