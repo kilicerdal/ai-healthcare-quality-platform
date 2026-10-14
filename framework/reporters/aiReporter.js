@@ -11,7 +11,9 @@ class AIReporter {
     if (result.status === 'failed' || result.status === 'timedOut') {
       this.failures.push({
         title: test.titlePath().join(' > '),
-        error: result.errors.map(e => e.message || String(e)).join('\n'),
+        error: result.errors
+          .map(error => error.message || String(error))
+          .join('\n'),
         status: result.status
       });
     }
@@ -23,13 +25,38 @@ class AIReporter {
       return;
     }
 
-    const ai = new OllamaClient();
-
     const reportDir = path.resolve('reports/ai');
     fs.mkdirSync(reportDir, { recursive: true });
 
+    // AI analysis is optional in CI to avoid depending on local Ollama.
+    const aiEnabled =
+      process.env.AI_REPORTER_ENABLED === 'true' ||
+      (!process.env.CI && process.env.AI_REPORTER_ENABLED !== 'false');
+
+    const ai = aiEnabled ? new OllamaClient() : null;
+
     for (let i = 0; i < this.failures.length; i++) {
       const failure = this.failures[i];
+
+      const fileName = `failure-${Date.now()}-${i + 1}.txt`;
+      const filePath = path.join(reportDir, fileName);
+
+      // Always save the original failure information.
+      const baseReport = [
+        `TEST: ${failure.title}`,
+        `STATUS: ${failure.status}`,
+        '',
+        'ERROR:',
+        failure.error,
+        ''
+      ].join('\n');
+
+      fs.writeFileSync(filePath, baseReport);
+
+      if (!aiEnabled) {
+        console.log(`Failure report saved: reports/ai/${fileName}`);
+        continue;
+      }
 
       try {
         const analysis = await ai.generate(`
@@ -48,26 +75,22 @@ Provide:
 Do not invent evidence or claim a root cause is confirmed.
 `);
 
-        const report = `
-TEST: ${failure.title}
-
-STATUS: ${failure.status}
-
-ERROR:
-${failure.error}
-
-AI ANALYSIS:
-${analysis}
-`;
-
-        const fileName = `failure-${Date.now()}-${i + 1}.txt`;
-
-        fs.writeFileSync(path.join(reportDir, fileName), report);
+        fs.appendFileSync(
+          filePath,
+          `\nAI ANALYSIS:\n${analysis}\n`
+        );
 
         console.log(`AI analysis saved: reports/ai/${fileName}`);
 
       } catch (error) {
-        console.error(`AI analysis failed for ${failure.title}: ${error.message}`);
+        fs.appendFileSync(
+          filePath,
+          `\nAI ANALYSIS UNAVAILABLE:\n${error.message}\n`
+        );
+
+        console.warn(
+          `AI analysis unavailable for ${failure.title}: ${error.message}`
+        );
       }
     }
   }

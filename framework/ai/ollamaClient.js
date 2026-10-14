@@ -1,7 +1,10 @@
 class OllamaClient {
   constructor() {
-    this.baseUrl = 'http://localhost:11434';
-    this.model = 'qwen2.5-coder:3b';
+    this.baseUrl = (
+      process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+    ).replace(/\/+$/, '');
+
+    this.model = process.env.OLLAMA_MODEL || 'qwen2.5-coder:3b';
   }
 
   async generate(prompt) {
@@ -34,9 +37,18 @@ class OllamaClient {
       }
 
       if (response.ok) {
-        const result = await response.json();
+        let result;
 
-        if (!result.response?.trim()) {
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error(`Ollama returned invalid JSON: ${error.message}`);
+        }
+
+        if (
+          typeof result.response !== 'string' ||
+          !result.response.trim()
+        ) {
           throw new Error('Ollama returned an empty response');
         }
 
