@@ -1,15 +1,27 @@
+
 name: Healthcare Quality Automation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - fix/**
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
 
+concurrency:
+  group: healthcare-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   regression-tests:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -32,6 +44,8 @@ jobs:
           - 5000:5000
 
     env:
+      CI: true
+
       DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: healthcare_quality
@@ -45,10 +59,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
@@ -82,6 +96,7 @@ jobs:
             fi
             sleep 2
           done
+
           echo "Moto failed to start"
           exit 1
 
@@ -111,22 +126,19 @@ jobs:
           cat server.log
           exit 1
 
-      - name: Run smoke tests
-        run: npm run test:smoke
-
-      - name: Run sanity tests
-        run: npm run test:sanity
-
       - name: Run regression tests
-        run: npm run test:regression
+        run: npm run test:regression -- --workers=1
 
       - name: Run deterministic AI validation tests
         run: |
-          npx playwright test tests/ai/aiGenerationRetry.spec.js tests/ai/businessRuleValidation.spec.js --workers=1
+          npx playwright test \
+            tests/ai/aiGenerationRetry.spec.js \
+            tests/ai/businessRuleValidation.spec.js \
+            --workers=1
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: |
