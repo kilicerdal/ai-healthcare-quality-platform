@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI Healthcare Quality Platform API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "API is healthy"
+          }
+        }
+      }
+    },
+    "/api/claims": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "memberId",
+                  "providerId",
+                  "serviceDate",
+                  "diagnosisCode",
+                  "claimAmount"
+                ],
+                "properties": {
+                  "memberId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "providerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "serviceDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "diagnosisCode": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "claimAmount": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Claim created"
+          },
+          "400": {
+            "description": "Invalid claim"
+          }
+        }
+      }
+    },
+    "/api/claims/{claimId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "claimId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim found"
+          },
+          "404": {
+            "description": "Claim not found"
+          }
+        }
+      }
+    }
+  }
+}
