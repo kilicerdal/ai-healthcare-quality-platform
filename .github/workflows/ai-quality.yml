@@ -1,0 +1,57 @@
+name: AI Quality Validation
+
+on:
+  push:
+    branches:
+      - fix/platform-reliability-20261013
+  pull_request:
+
+jobs:
+  ai-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check framework/ai/aiSelfHealing.js
+          node --check framework/ai/aiTestDataGenerator.js
+          node --check framework/ai/aiRiskPrioritizer.js
+          node --check framework/ai/aiOpenAPIAnalyzer.js
+          node --check framework/reporters/aiQualityDashboard.js
+
+      - name: Validate OpenAPI specification
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('openapi/healthcare-api.json')); console.log('OpenAPI valid')"
+
+      - name: Run deterministic AI validation tests
+        run: |
+          npx playwright test \
+            tests/ai/businessRuleValidation.spec.js \
+            tests/ai/aiCoverageValidator.spec.js \
+            tests/ai/aiCoverageNegativeValidation.spec.js \
+            tests/ai/aiCoverageConflictingValidation.spec.js \
+            tests/ai/aiCoverageRuleMismatch.spec.js \
+            tests/ai/aiDuplicateCoverageDetector.spec.js \
+            --reporter=list \
+            --workers=1
+
+      - name: Generate AI quality dashboard
+        run: node scripts/generateAIQualityDashboard.js
+
+      - name: Upload quality dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-quality-dashboard
+          path: reports/ai-quality-dashboard/
