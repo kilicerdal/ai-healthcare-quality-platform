@@ -1,4 +1,14 @@
 const fs = require('fs');
+const historyFile = 'reports/dashboard/ai-generation-history.jsonl';
+
+const generationHistory = fs.existsSync(historyFile)
+  ? fs.readFileSync(historyFile, 'utf8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map(JSON.parse)
+  : [];
+
 const path = require('path');
 
 const reportDir = path.join(process.cwd(), 'reports/dashboard');
@@ -282,6 +292,70 @@ ${generationReport.attempts.map(a => `
 </p>
 `;
 
+// AI Failure Analysis Dashboard Section
+const failureReportFile = path.join(
+  reportDir,
+  'ai-failure-results.json'
+);
+
+const failureReport = fs.existsSync(failureReportFile)
+  ? JSON.parse(fs.readFileSync(failureReportFile, 'utf8'))
+  : null;
+
+const failureSection = !failureReport
+  ? `
+<h2>AI Failure Analysis</h2>
+<p class="subtitle">No AI failure report available.</p>
+`
+  : `
+<h2>AI Failure Analysis</h2>
+
+<p class="subtitle">
+  Latest AI API execution:
+  ${escapeHtml(failureReport.generatedAt)}
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">API Scenarios Executed</div>
+    <div class="value blue">${failureReport.totalExecuted}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">API Scenarios Failed</div>
+    <div class="value ${failureReport.totalFailed ? 'red' : 'green'}">
+      ${failureReport.totalFailed}
+    </div>
+  </div>
+</div>
+
+${failureReport.failures.length === 0
+  ? '<p class="green">All AI-generated API scenarios passed. No failures to analyze.</p>'
+  : `
+<table>
+<thead>
+<tr>
+  <th>Test ID</th>
+  <th>Description</th>
+  <th>Expected Status</th>
+  <th>Actual Status</th>
+  <th>AI Analysis</th>
+</tr>
+</thead>
+<tbody>
+${failureReport.failures.map(f => `
+<tr>
+  <td>${escapeHtml(f.testId)}</td>
+  <td>${escapeHtml(f.description)}</td>
+  <td>${escapeHtml(f.expectedStatus)}</td>
+  <td>${escapeHtml(f.actualStatus)}</td>
+  <td style="white-space:pre-wrap">${escapeHtml(f.analysis)}</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+`}
+`;
 const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -490,28 +564,36 @@ ${suites.map(s => `
 ${auditSection}
 ${liveAuditSection}
 ${generationSection}
+${failureSection}
 <h2>AI Generation History</h2>
-<div id="ai-generation-history"></div>
-<script>
-fetch('ai-generation-history.jsonl')
-  .then(response => response.text())
-  .then(text => {
-    const sessions = text.trim().split('\\n').map(JSON.parse);
-    const attempts = sessions.flatMap(session => session.attempts);
+${(() => {
+  const historyFile = path.join(
+    process.cwd(),
+    'reports/dashboard/ai-generation-history.jsonl'
+  );
 
-    const accepted = attempts.filter(a => a.accepted).length;
-    const rejected = attempts.filter(a => !a.accepted).length;
+  if (!fs.existsSync(historyFile)) {
+    return '<p>No generation history recorded yet.</p>';
+  }
 
-    document.getElementById('ai-generation-history').innerHTML =
-      '<p>Generation sessions: ' + sessions.length + '</p>' +
-      '<p>Accepted attempts: ' + accepted + '</p>' +
-      '<p>Rejected attempts: ' + rejected + '</p>';
-  })
-  .catch(() => {
-    document.getElementById('ai-generation-history').textContent =
-      'Generation history unavailable.';
-  });
-</script>
+  const sessions = fs.readFileSync(historyFile, 'utf8')
+    .split('\n')
+    .filter(line => line.trim())
+    .map(line => JSON.parse(line));
+
+  const attempts = sessions.flatMap(session => session.attempts || []);
+
+  const accepted = attempts.filter(a => a.accepted).length;
+  const rejected = attempts.filter(a => !a.accepted).length;
+
+  return `
+    <div class="card">
+      <p>Generation sessions: ${sessions.length}</p>
+      <p>Accepted attempts: ${accepted}</p>
+      <p>Rejected attempts: ${rejected}</p>
+    </div>
+  `;
+})()}
 
 <h2>Individual Test Results</h2>
 

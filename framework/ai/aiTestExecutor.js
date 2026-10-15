@@ -1,8 +1,13 @@
+
+const { AIFailureReporter } = require('./aiFailureReporter');
+const { AIFailureAnalyzer } = require('./aiFailureAnalyzer');
 class AITestExecutor {
   constructor(request, baseURL = 'http://localhost:3000') {
-    this.request = request;
-    this.baseURL = baseURL;
-  }
+  this.failureReporter = new AIFailureReporter();
+  this.request = request;
+  this.baseURL = baseURL;
+  this.failureAnalyzer = new AIFailureAnalyzer();
+}
 
   async executeScenarios(scenarios) {
     const results = [];
@@ -33,13 +38,31 @@ class AITestExecutor {
       };
 
       results.push(result);
+      if (!passed) {
+  console.log(`\nAI analyzing failure for ${scenario.id}...`);
+
+  try {
+    const analysis = await this.failureAnalyzer.analyzeFailure(result);
+
+    result.aiAnalysis = analysis.analysis;
+
+    console.log('\n===== AI FAILURE ANALYSIS =====');
+    console.log(result.aiAnalysis);
+  } catch (error) {
+    result.aiAnalysisError = error.message;
+
+    console.warn(
+      `AI failure analysis unavailable: ${error.message}`
+    );
+  }
+}
 
       console.log(
         `${scenario.id}: Expected ${scenario.expectedStatus}, ` +
         `Actual ${actualStatus} — ${passed ? 'PASS' : 'FAIL'}`
       );
     }
-
+    this.failureReporter.save(results);
     return results;
   }
 }
