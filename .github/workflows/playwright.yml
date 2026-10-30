@@ -12,7 +12,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: healthcare-tests-${{ github.workflow }}-${{ github.ref }}
@@ -127,7 +127,9 @@ jobs:
           exit 1
 
       - name: Run regression tests
-        run: npm run test:regression -- --workers=1
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/regression.json
+        run: npm run test:regression -- --reporter=list,json --workers=1
 
       - name: Run deterministic AI validation tests
         run: |
@@ -140,8 +142,22 @@ jobs:
             tests/ai/aiCoverageRuleMismatch.spec.js \
             tests/ai/aiDuplicateCoverageDetector.spec.js \
             tests/ai/aiExecutionReporter.spec.js \
-            --reporter=list \
+            --reporter=list,json \
             --workers=1
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/ai-validation.json
+
+      - name: Publish healthcare test metrics
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          node scripts/publishTestMetrics.js
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/test-metrics.json
+          git diff --cached --quiet || git commit -m "Update healthcare CI test metrics"
+          git push
 
       - name: Upload test reports
         if: always()
