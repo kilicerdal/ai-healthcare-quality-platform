@@ -128,7 +128,7 @@ jobs:
 
       - name: Run regression tests
         env:
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/regression.json
+          PLAYWRIGHT_JSON_OUTPUT_FILE: reports/regression.json
         run: npm run test:regression -- --reporter=list,json --workers=1
 
       - name: Run deterministic AI validation tests
@@ -145,7 +145,7 @@ jobs:
             --reporter=list,json \
             --workers=1
         env:
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/ai-validation.json
+          PLAYWRIGHT_JSON_OUTPUT_FILE: reports/ai-validation.json
 
       - name: Publish healthcare test metrics
         if: always() && github.event_name != 'pull_request'

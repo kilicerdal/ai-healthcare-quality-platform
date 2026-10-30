@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 const files = [
-  'test-results/regression.json',
-  'test-results/ai-validation.json',
+  'reports/regression.json',
+  'reports/ai-validation.json',
 ];
 
 const totals = {
