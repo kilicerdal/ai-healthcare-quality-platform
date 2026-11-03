@@ -4,6 +4,16 @@
 
 A Senior SDET portfolio project demonstrating API automation, database testing, event-driven integration testing, AI-assisted quality engineering, and CI/CD.
 
+## See the results
+
+![Actual deterministic AI validation report](docs/images/ai-validation-report.jpg)
+
+[75-second captioned walkthrough](docs/media/walkthrough.webm?raw=true) · [Download sample HTML report ZIP](docs/samples/ai-validation-report.zip?raw=true)
+
+The screenshot and report show eight deterministic AI validation tests run locally on November 3, 2026. This is a selected subset, not the full regression suite or a live Ollama demonstration. Extract the ZIP and open `index.html` to inspect the checks. The walkthrough uses actual report screenshots, with captions and no narration.
+
+The complete Docker setup and regression suite also passed in [CI run 41663498497](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/runs/41663498497).
+
 ## Review the code
 
 | Example | What it demonstrates |
