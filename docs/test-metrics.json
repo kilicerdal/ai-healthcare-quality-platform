@@ -1,10 +1,10 @@
 {
-  "total": 46,
-  "passed": 46,
+  "total": 56,
+  "passed": 56,
   "failed": 0,
   "skipped": 0,
   "flaky": 0,
-  "duration": 2278.9339999999997,
-  "updatedAt": "2026-11-03T17:09:53.492Z",
-  "runUrl": "https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/runs/41681426066"
+  "duration": 3752.328,
+  "updatedAt": "2026-11-03T17:22:46.183Z",
+  "runUrl": "https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/runs/41683561329"
 }
