@@ -149,6 +149,7 @@ Before running the full regression suite, initialize PostgreSQL, the claims tabl
 Start the healthcare API in a separate terminal after initializing the database:
 
 ```bash
+npm run db:migrate
 node app/server.js
 ```
 
@@ -172,7 +173,7 @@ npm run test:unit
 
 These deterministic tests cover malformed queue messages, batch continuation, storage/API failures, acknowledgement failures, and invalid AI scenarios without Docker or a live model. CI runs them before integration tests.
 
-Queue processing acknowledges only successfully processed messages. It continues with later messages when an earlier one fails, then throws an `AggregateError` containing the causes and the successfully acknowledged `processedClaims`. Failed messages remain available for queue retry. This is at-least-once processing: if persistence succeeds but acknowledgement fails, a retry can create a duplicate. Idempotency and a deployed dead-letter queue remain future work.
+Queue processing acknowledges only successfully processed messages. It continues with later messages when an earlier one fails, then throws an `AggregateError` containing the causes and the successfully acknowledged `processedClaims`. Failed messages remain available for queue retry. Delivery remains at-least-once; the API uses a database unique index and atomic upsert to avoid duplicate claims for a repeated idempotency key. Queue ingestion now uses an idempotency key derived from the S3 bucket and object key. Identical retries return the original claim; a changed payload at the same key returns HTTP 409. A deployed dead-letter queue remains future work.
 
 The SQS ingestion test creates a unique temporary queue. S3 ingestion and database verification tests use unique synthetic member IDs and clean up their records and objects in `finally` blocks. Other API tests still use a disposable test database; cleanup is not yet universal.
 
@@ -197,3 +198,9 @@ Demonstrate Senior SDET capabilities in:
 - AI-assisted quality engineering
 - Risk-based testing
 - Test reporting and failure analysis
+
+## Retry contract
+
+`POST /api/claims` accepts an optional `Idempotency-Key` header (up to 128 characters). The same key and normalized claim fields return the original claim with HTTP 201, including concurrent requests. Reusing the key with different claim fields returns HTTP 409. Requests without the header retain ordinary create behavior. Startup applies additive schema migrations, including existing Docker volumes.
+
+Queue ingestion derives the key from the bucket and object key. Use immutable, unique object keys for distinct claims. Deduplication lasts while the claim row is retained; this is not an exactly-once delivery guarantee.

@@ -2,6 +2,7 @@ const {
   SQSClient,
   SendMessageCommand,
   ReceiveMessageCommand,
+  ChangeMessageVisibilityCommand,
   CreateQueueCommand,
   DeleteQueueCommand,
   DeleteMessageCommand,
@@ -27,20 +28,31 @@ class SQSQueueClient {
     return new SQSQueueClient(result.QueueUrl);
   }
 
+  async releaseMessage(receiptHandle) {
+    return sqs.send(
+      new ChangeMessageVisibilityCommand({
+        QueueUrl: this.queueUrl,
+        ReceiptHandle: receiptHandle,
+        VisibilityTimeout: 0,
+      }),
+    );
+  }
+
   async deleteQueue() {
     return sqs.send(new DeleteQueueCommand({ QueueUrl: this.queueUrl }));
   }
 
-  async sendClaimMessage(fileName) {
+  async sendMessageBody(body) {
     return sqs.send(
       new SendMessageCommand({
         QueueUrl: this.queueUrl,
-        MessageBody: JSON.stringify({
-          bucket: "healthcare-claims-local",
-          key: fileName,
-        }),
+        MessageBody: body,
       }),
     );
+  }
+
+  async sendClaimMessage(fileName) {
+    return this.sendMessageBody(JSON.stringify({ bucket: this.bucketName, key: fileName }));
   }
 
   async receiveMessages() {

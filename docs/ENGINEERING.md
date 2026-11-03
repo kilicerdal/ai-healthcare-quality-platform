@@ -12,7 +12,7 @@ A missing S3 object never reaches the API. An API error or connection failure ne
 
 ## Explain the tradeoff
 
-Continuing the batch improves progress, but does not provide exactly-once delivery. A failure between database persistence and queue acknowledgement can duplicate a claim on retry. A production design needs idempotency keys, retry limits, a dead-letter queue, monitoring, and an operational replay policy. These capabilities are not claimed by this project.
+Continuing the batch improves progress, but does not provide exactly-once delivery. The processor now derives an idempotency key from the S3 bucket and object key. A unique database index and atomic upsert return the same claim on retries and reject changed payloads with HTTP 409. Tests cover concurrent submissions and failed acknowledgement followed by retry. Deduplication ends if the row is deleted, and distinct claims require distinct immutable S3 keys. Retry limits, a deployed dead-letter queue, monitoring, and an operational replay policy remain future work.
 
 ## Explain test isolation
 

@@ -183,3 +183,27 @@ test("invalid file name is rejected before storage access", async () => {
   await assert.rejects(processor.processClaim(" "), /nonempty/);
   assert.equal(reads, 0);
 });
+
+test("ingestion idempotency key is stable for the same object and distinct for different objects", async () => {
+  const keys = [];
+  const processor = new ClaimsProcessor(
+    {
+      post: async (_, options) => {
+        keys.push(options.headers["Idempotency-Key"]);
+        return { status: () => 201, json: async () => ({ claimId: "one" }) };
+      },
+    },
+    {
+      s3Client: {
+        bucketName: "healthcare-claims-local",
+        getClaim: async () => ({ memberId: "TEST-1" }),
+      },
+    },
+  );
+  await processor.processClaim("a.json");
+  await processor.processClaim("a.json");
+  await processor.processClaim("b.json");
+  assert.equal(keys[0], keys[1]);
+  assert.notEqual(keys[0], keys[2]);
+  assert.match(keys[0], /^[a-f0-9]{64}$/);
+});
