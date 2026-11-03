@@ -14,7 +14,8 @@
     "dashboard": "node scripts/extractTestDetails.js && node scripts/generateDashboard.js",
     "demo:up": "docker compose up --build --wait",
     "demo:down": "docker compose down",
-    "demo:test": "DB_USER=postgres DB_PASSWORD=local-demo-only playwright test --grep-invert @ai --workers=1"
+    "demo:test": "DB_USER=postgres DB_PASSWORD=local-demo-only playwright test --grep-invert @ai --workers=1",
+    "test:unit": "node --test tests/unit/*.test.js"
   },
   "keywords": [],
   "author": "",

@@ -16,28 +16,28 @@ The complete Docker setup and regression suite also passed in [CI run 4166349849
 
 ## Review the code
 
-| Example | What it demonstrates |
-| --- | --- |
-| [Claims API](app/server.js) | Input validation, parameterized SQL, and response handling |
-| [API validation tests](tests/api/claimsValidation.spec.js) | Invalid inputs and boundary conditions |
-| [Contract tests](tests/contract/claimsContract.spec.js) | Response schema validation |
-| [Database tests](tests/database/claimsDatabase.spec.js) | Persisted claim verification |
-| [SQS ingestion tests](tests/e2e/sqsClaimsIngestion.spec.js) | Event-driven integration using simulated AWS services |
-| [AI scenario validator tests](tests/ai/aiScenarioValidator.spec.js) | Validation of AI-generated scenarios |
-| [CI workflow](.github/workflows/playwright.yml) | PostgreSQL/Moto setup, execution, and reports |
+| Example                                                             | What it demonstrates                                       |
+| ------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [Claims API](app/server.js)                                         | Input validation, parameterized SQL, and response handling |
+| [API validation tests](tests/api/claimsValidation.spec.js)          | Invalid inputs and boundary conditions                     |
+| [Contract tests](tests/contract/claimsContract.spec.js)             | Response schema validation                                 |
+| [Database tests](tests/database/claimsDatabase.spec.js)             | Persisted claim verification                               |
+| [SQS ingestion tests](tests/e2e/sqsClaimsIngestion.spec.js)         | Event-driven integration using simulated AWS services      |
+| [AI scenario validator tests](tests/ai/aiScenarioValidator.spec.js) | Validation of AI-generated scenarios                       |
+| [CI workflow](.github/workflows/playwright.yml)                     | PostgreSQL/Moto setup, execution, and reports              |
 
 ## Technology Stack
 
-| Technology | Purpose |
-|---|---|
-| Playwright | API and end-to-end automation |
-| JavaScript / Node.js | Automation framework and backend |
-| Express | Healthcare claims REST API |
-| PostgreSQL | Database validation |
-| AWS SDK | S3 and SQS integration |
-| Moto | Local AWS service simulation |
-| Ollama / Qwen2.5-Coder | AI-assisted testing |
-| GitHub Actions | CI/CD automation |
+| Technology             | Purpose                          |
+| ---------------------- | -------------------------------- |
+| Playwright             | API and end-to-end automation    |
+| JavaScript / Node.js   | Automation framework and backend |
+| Express                | Healthcare claims REST API       |
+| PostgreSQL             | Database validation              |
+| AWS SDK                | S3 and SQS integration           |
+| Moto                   | Local AWS service simulation     |
+| Ollama / Qwen2.5-Coder | AI-assisted testing              |
+| GitHub Actions         | CI/CD automation                 |
 
 ## Architecture
 
@@ -62,13 +62,13 @@ The complete Docker setup and regression suite also passed in [CI run 4166349849
 
 ## Automated Test Suites
 
-| Suite | Command |
-| --- | --- |
-| Smoke | `npm run test:smoke` |
-| Sanity | `npm run test:sanity` |
+| Suite                                  | Command                   |
+| -------------------------------------- | ------------------------- |
+| Smoke                                  | `npm run test:smoke`      |
+| Sanity                                 | `npm run test:sanity`     |
 | Regression (excludes tests tagged @ai) | `npm run test:regression` |
-| AI directory | `npm run test:ai` |
-| Contract | `npm run test:contract` |
+| AI directory                           | `npm run test:ai`         |
+| Contract                               | `npm run test:contract`   |
 
 Suite selections can overlap. For current discovered tests, run `npx playwright test --list`; for executed totals and outcomes, inspect the corresponding CI run. Static test totals are omitted because the suite is evolving.
 
@@ -163,6 +163,20 @@ Run AI tests:
 ```bash
 npm run test:ai
 ```
+
+## Reliability checks
+
+```bash
+npm run test:unit
+```
+
+These deterministic tests cover malformed queue messages, batch continuation, storage/API failures, acknowledgement failures, and invalid AI scenarios without Docker or a live model. CI runs them before integration tests.
+
+Queue processing acknowledges only successfully processed messages. It continues with later messages when an earlier one fails, then throws an `AggregateError` containing the causes and the successfully acknowledged `processedClaims`. Failed messages remain available for queue retry. This is at-least-once processing: if persistence succeeds but acknowledgement fails, a retry can create a duplicate. Idempotency and a deployed dead-letter queue remain future work.
+
+The SQS ingestion test creates a unique temporary queue. S3 ingestion and database verification tests use unique synthetic member IDs and clean up their records and objects in `finally` blocks. Other API tests still use a disposable test database; cleanup is not yet universal.
+
+For an interview walkthrough, see [engineering decisions and failure cases](docs/ENGINEERING.md).
 
 ## Security
 

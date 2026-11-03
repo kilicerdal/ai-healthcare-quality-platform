@@ -1,52 +1,58 @@
-const { test, expect } = require('@playwright/test');
-const { randomUUID } = require('crypto');
+const { test, expect } = require("@playwright/test");
+const { randomUUID } = require("crypto");
 
-const { ClaimBuilder } = require('../../framework/builders/claimBuilder');
-const { S3StorageClient } = require('../../framework/clients/s3Client');
-const { SQSQueueClient } = require('../../framework/clients/sqsClient');
-const { SQSClaimsProcessor } = require('../../app/sqsClaimsProcessor');
-const { DatabaseClient } = require('../../framework/clients/databaseClient');
+const { ClaimBuilder } = require("../../framework/builders/claimBuilder");
+const { S3StorageClient } = require("../../framework/clients/s3Client");
+const { SQSQueueClient } = require("../../framework/clients/sqsClient");
+const { SQSClaimsProcessor } = require("../../app/sqsClaimsProcessor");
+const { DatabaseClient } = require("../../framework/clients/databaseClient");
 
-test('@e2e @regression @sqs Process healthcare claim through S3 and SQS', async ({ request }) => {
+test("@e2e @regression @sqs Process healthcare claim through S3 and SQS", async ({ request }) => {
   const s3Client = new S3StorageClient();
-  const sqsClient = new SQSQueueClient();
-  const processor = new SQSClaimsProcessor(request);
+  const sqsClient = await SQSQueueClient.createIsolatedQueue(`test-claims-${randomUUID()}`);
+  const processor = new SQSClaimsProcessor(request, { sqsClient });
   const databaseClient = new DatabaseClient();
 
   const claimData = new ClaimBuilder()
-    .withMemberId(`MEM-${randomUUID()}`)
-    .withProviderId('PRV-9001')
-    .withDiagnosisCode('E11.9')
+    .withMemberId(`TEST-${randomUUID()}`)
+    .withProviderId("PRV-9001")
+    .withDiagnosisCode("E11.9")
     .withClaimAmount(2250.75)
     .build();
 
   const fileName = `inbound/claims/${randomUUID()}.json`;
 
-  // Upload claim to local S3
-  await s3Client.uploadClaim(fileName, claimData);
+  try {
+    // Upload claim to local S3
+    await s3Client.uploadClaim(fileName, claimData);
 
-  // Publish message to local SQS
-  const sendResponse = await sqsClient.sendClaimMessage(fileName);
+    // Publish message to local SQS
+    const sendResponse = await sqsClient.sendClaimMessage(fileName);
 
-  expect(sendResponse.MessageId).toBeTruthy();
+    expect(sendResponse.MessageId).toBeTruthy();
 
-  // Consume SQS message and process claim
-  const processedClaims = await processor.processMessages();
+    // Consume SQS message and process claim
+    const processedClaims = await processor.processMessages();
 
-  // Find the claim created by this test
-  const processedClaim = processedClaims.find(
-    claim => claim.memberId === claimData.memberId
-  );
+    // Find the claim created by this test
+    const processedClaim = processedClaims.find((claim) => claim.memberId === claimData.memberId);
 
-  expect(processedClaim).toBeDefined();
-  expect(processedClaim.status).toBe('RECEIVED');
+    expect(processedClaim).toBeDefined();
+    expect(processedClaim.status).toBe("RECEIVED");
 
-  // Verify PostgreSQL
-  const dbClaim = await databaseClient.getClaimById(processedClaim.claimId);
+    // Verify PostgreSQL
+    const dbClaim = await databaseClient.getClaimById(processedClaim.claimId);
 
-  expect(dbClaim).not.toBeNull();
-  expect(dbClaim.member_id).toBe(claimData.memberId);
-  expect(dbClaim.provider_id).toBe(claimData.providerId);
-  expect(Number(dbClaim.claim_amount)).toBe(claimData.claimAmount);
-  expect(dbClaim.status).toBe('RECEIVED');
+    expect(dbClaim).not.toBeNull();
+    expect(dbClaim.member_id).toBe(claimData.memberId);
+    expect(dbClaim.provider_id).toBe(claimData.providerId);
+    expect(Number(dbClaim.claim_amount)).toBe(claimData.claimAmount);
+    expect(dbClaim.status).toBe("RECEIVED");
+  } finally {
+    await Promise.all([
+      sqsClient.deleteQueue(),
+      s3Client.deleteClaim(fileName),
+      databaseClient.deleteClaimsByMemberId(claimData.memberId),
+    ]);
+  }
 });

@@ -18,6 +18,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+
+      - name: Unit reliability checks
+        run: npm run test:unit
       - run: npm run demo:up
       - run: npm run demo:test
       - uses: actions/upload-artifact@v7

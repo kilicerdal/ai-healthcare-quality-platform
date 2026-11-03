@@ -1,7 +1,6 @@
-const pool = require('../../app/db');
+const pool = require("../../app/db");
 
 class DatabaseClient {
-
   async getClaimById(claimId) {
     const result = await pool.query(
       `SELECT
@@ -15,10 +14,17 @@ class DatabaseClient {
         created_at
       FROM claims
       WHERE claim_id = $1`,
-      [claimId]
+      [claimId],
     );
 
     return result.rows[0] || null;
+  }
+
+  async deleteClaimsByMemberId(memberId) {
+    if (typeof memberId !== "string" || !memberId.startsWith("TEST-")) {
+      throw new Error("Cleanup requires a unique TEST- member ID");
+    }
+    return pool.query("DELETE FROM claims WHERE member_id = $1", [memberId]);
   }
 
   async close() {
