@@ -97,6 +97,25 @@ It provisions PostgreSQL and Moto, creates the claims table and simulated S3/SQS
 
 Tests that call a live local Ollama model require that service separately. The deterministic AI validation subset in CI does not imply that every model-dependent test runs there.
 
+## One-command demo environment
+
+Requires Docker with Compose v2, Node.js 24, npm, and available local ports 3000, 5000, and 5432.
+
+```bash
+npm ci
+npm run demo:up
+npm run demo:test
+npx playwright show-report
+```
+
+`demo:up` builds the API, starts PostgreSQL and Moto, and initializes the claims table, S3 bucket, and SQS queue. The command waits for service health checks. `demo:test` runs serially against these local services. Ollama-dependent tests are a separate workflow.
+
+```bash
+npm run demo:down
+```
+
+Stopping preserves the PostgreSQL volume. The credentials are local demo values and ports bind to loopback. This environment uses synthetic data and is intended for local development. If a port is occupied, stop the conflicting service first. Container startup is validated by the [Demo environment workflow](.github/workflows/demo-environment.yml).
+
 ## Local Setup
 
 Prerequisites:

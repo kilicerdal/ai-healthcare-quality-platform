@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS claims (
+  claim_id VARCHAR(50) PRIMARY KEY,
+  member_id VARCHAR(50) NOT NULL,
+  provider_id VARCHAR(50) NOT NULL,
+  service_date DATE NOT NULL,
+  diagnosis_code VARCHAR(20) NOT NULL,
+  claim_amount NUMERIC(12,2) NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'RECEIVED',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,64 @@
+name: healthcare-quality-demo
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local-demo-only
+      POSTGRES_DB: healthcare_quality
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - claims-data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/claims.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d healthcare_quality"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  moto:
+    image: motoserver/moto:5.1.15
+    ports:
+      - "127.0.0.1:5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  aws-init:
+    image: amazon/aws-cli:2.31.18
+    depends_on:
+      moto:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        aws --endpoint-url http://moto:5000 s3api create-bucket --bucket healthcare-claims-local
+        aws --endpoint-url http://moto:5000 sqs create-queue --queue-name healthcare-claims-queue
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      aws-init:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: healthcare_quality
+      DB_USER: postgres
+      DB_PASSWORD: local-demo-only
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+volumes:
+  claims-data:

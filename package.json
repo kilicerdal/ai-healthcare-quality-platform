@@ -1,8 +1,7 @@
-
 {
   "name": "ai-healthcare-quality-platform",
   "version": "1.0.0",
-  "description": "",
+  "description": "Healthcare claims API, database, and simulated AWS integration testing with Playwright.",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
@@ -12,7 +11,10 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:sanity": "playwright test --grep @sanity",
     "test:contract": "playwright test tests/contract",
-    "dashboard": "node scripts/extractTestDetails.js && node scripts/generateDashboard.js"
+    "dashboard": "node scripts/extractTestDetails.js && node scripts/generateDashboard.js",
+    "demo:up": "docker compose up --build --wait",
+    "demo:down": "docker compose down",
+    "demo:test": "DB_USER=postgres DB_PASSWORD=local-demo-only playwright test --grep-invert @ai --workers=1"
   },
   "keywords": [],
   "author": "",
