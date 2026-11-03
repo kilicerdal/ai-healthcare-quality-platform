@@ -212,3 +212,7 @@ Open the GitHub Actions run summary for pass, fail, flaky, and skipped execution
 ## API response contracts
 
 The [OpenAPI 3.1 specification](openapi/healthcare-api.json) documents JSON response schemas, the optional retry header, and HTTP 409 conflicts. Contract tests validate success, health, validation-error, missing-resource, replay, and conflict responses against those schemas. Date and timestamp checks use full AJV format validation. Unit checks also reject malformed IDs, leaked persistence fields, and undocumented statuses. The shared claim schema is checked against the OpenAPI component to prevent drift.
+
+## Input boundaries
+
+Claim identifiers must be nonblank text within the existing database column limits (50 characters for member/provider IDs, 20 for diagnosis codes). Amounts must be positive, fit `NUMERIC(12,2)`, and have at most two decimal places. Sub-cent and overflowing inputs return HTTP 400 before persistence. Malformed JSON and oversized bodies use the documented JSON error shape. Integration checks verify rejected requests leave no claim records behind.

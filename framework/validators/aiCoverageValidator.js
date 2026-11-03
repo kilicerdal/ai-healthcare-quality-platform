@@ -1,3 +1,4 @@
+const { isValidClaimAmount } = require("../../app/validateClaim");
 class AICoverageValidator {
   constructor() {
     this.approvedRules = {
@@ -74,10 +75,7 @@ class AICoverageValidator {
           (field) => body[field] === undefined || body[field] === null || body[field] === "",
         );
         // Detect conflicting validation failures
-        const invalidAmount =
-          typeof body.claimAmount !== "number" ||
-          !Number.isFinite(body.claimAmount) ||
-          body.claimAmount <= 0;
+        const invalidAmount = !isValidClaimAmount(body.claimAmount);
 
         const date = body.serviceDate;
 
@@ -136,11 +134,7 @@ class AICoverageValidator {
         }
 
         if (ruleId === "invalid-claim-amount") {
-          if (
-            typeof body.claimAmount === "number" &&
-            Number.isFinite(body.claimAmount) &&
-            body.claimAmount > 0
-          ) {
+          if (!invalidAmount) {
             errors.push("claimAmount is valid");
           }
         }

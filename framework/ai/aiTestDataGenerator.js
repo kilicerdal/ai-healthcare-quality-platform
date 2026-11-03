@@ -1,7 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const { validateClaim } = require("../../app/validateClaim");
+const fs = require("fs");
+const path = require("path");
 
-const { OllamaClient } = require('./ollamaClient');
+const { OllamaClient } = require("./ollamaClient");
 
 class AITestDataGenerator {
   constructor() {
@@ -9,43 +10,7 @@ class AITestDataGenerator {
   }
 
   validateClaim(claim) {
-    if (!claim || typeof claim !== 'object' || Array.isArray(claim)) {
-      return false;
-    }
-
-    const requiredStrings = [
-      'memberId',
-      'providerId',
-      'serviceDate',
-      'diagnosisCode'
-    ];
-
-    if (requiredStrings.some(
-      field => typeof claim[field] !== 'string' || !claim[field].trim()
-    )) {
-      return false;
-    }
-
-    if (
-      typeof claim.claimAmount !== 'number' ||
-      !Number.isFinite(claim.claimAmount) ||
-      claim.claimAmount <= 0
-    ) {
-      return false;
-    }
-
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(claim.serviceDate);
-
-    if (!match) return false;
-
-    const [, year, month, day] = match.map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-
-    return (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
-    );
+    return validateClaim(claim) === null;
   }
 
   async generate() {
@@ -70,7 +35,8 @@ Requirements:
 - All fields are required.
 - Use fictional TEST identifiers only.
 - serviceDate must be a real YYYY-MM-DD date.
-- claimAmount must be a positive number.
+- claimAmount must be positive, at most 9999999999.99, with at most two decimal places.
+- memberId/providerId must be at most 50 characters and diagnosisCode at most 20.
 - Do not include real patient information.
 - No markdown or explanations.
 `;
@@ -83,31 +49,31 @@ Requirements:
 
         const response = await this.ollama.generate(prompt);
 
-        if (typeof response !== 'string') {
-          throw new Error('AI response must be text');
+        if (typeof response !== "string") {
+          throw new Error("AI response must be text");
         }
 
         const cleaned = response
-          .replace(/```json/gi, '')
-          .replace(/```/g, '')
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
           .trim();
 
         const parsed = JSON.parse(cleaned);
 
         if (!Array.isArray(parsed.claims) || parsed.claims.length !== 3) {
-          throw new Error('Expected exactly 3 claims');
+          throw new Error("Expected exactly 3 claims");
         }
 
-        if (!parsed.claims.every(claim => this.validateClaim(claim))) {
-          throw new Error('Generated claims failed validation');
+        if (!parsed.claims.every((claim) => this.validateClaim(claim))) {
+          throw new Error("Generated claims failed validation");
         }
 
-        if (!parsed.claims.every(
-          claim =>
-            claim.memberId.startsWith('TEST-') &&
-            claim.providerId.startsWith('TEST-')
-        )) {
-          throw new Error('Claims must use fictional TEST identifiers');
+        if (
+          !parsed.claims.every(
+            (claim) => claim.memberId.startsWith("TEST-") && claim.providerId.startsWith("TEST-"),
+          )
+        ) {
+          throw new Error("Claims must use fictional TEST identifiers");
         }
 
         return parsed.claims;
@@ -117,32 +83,27 @@ Requirements:
       }
     }
 
-    throw new Error(
-      `AI test data generation failed: ${lastError.message}`
-    );
+    throw new Error(`AI test data generation failed: ${lastError.message}`);
   }
 
   saveReport(claims) {
-    const directory = path.join(
-      process.cwd(),
-      'reports',
-      'ai-test-data'
-    );
+    const directory = path.join(process.cwd(), "reports", "ai-test-data");
 
     fs.mkdirSync(directory, { recursive: true });
 
-    const filepath = path.join(
-      directory,
-      `generated-claims-${Date.now()}.json`
-    );
+    const filepath = path.join(directory, `generated-claims-${Date.now()}.json`);
 
     fs.writeFileSync(
       filepath,
-      JSON.stringify({
-        generatedAt: new Date().toISOString(),
-        totalClaims: claims.length,
-        claims
-      }, null, 2)
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          totalClaims: claims.length,
+          claims,
+        },
+        null,
+        2,
+      ),
     );
 
     return filepath;

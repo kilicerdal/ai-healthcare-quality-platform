@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const express = require("express");
 const pool = require("./db");
+const { validateClaim } = require("./validateClaim");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,38 +19,11 @@ app.get("/health", (req, res) => {
 // Create a new healthcare claim
 app.post("/api/claims", async (req, res) => {
   try {
+    const validationError = validateClaim(req.body);
+    if (validationError) return res.status(400).json({ error: validationError });
     const { memberId, providerId, serviceDate, diagnosisCode, claimAmount } = req.body;
 
-    // Validate required fields
-    if (!memberId || !providerId || !serviceDate || !diagnosisCode || claimAmount === undefined) {
-      return res.status(400).json({
-        error: "Missing required claim fields",
-      });
-    }
-
-    // Validate claim amount
-    if (typeof claimAmount !== "number" || !Number.isFinite(claimAmount) || claimAmount <= 0) {
-      return res.status(400).json({
-        error: "Claim amount must be a positive number",
-      });
-    }
-
-    // Validate service date
-    const validDateFormat =
-      typeof serviceDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(serviceDate);
-
-    const parsedDate = validDateFormat ? new Date(serviceDate) : new Date(NaN);
-    if (
-      !validDateFormat ||
-      Number.isNaN(parsedDate.getTime()) ||
-      parsedDate.toISOString().slice(0, 10) !== serviceDate
-    ) {
-      return res.status(400).json({
-        error: "Invalid service date",
-      });
-    }
-
-    const idempotencyKey = req.get("Idempotency-Key") || null;
+    const idempotencyKey = req.get("Idempotency-Key") ?? null;
     if (idempotencyKey !== null && (!idempotencyKey.trim() || idempotencyKey.length > 128)) {
       return res.status(400).json({ error: "Invalid Idempotency-Key" });
     }
@@ -144,6 +118,17 @@ app.get("/api/claims/:claimId", async (req, res) => {
       error: "Internal server error",
     });
   }
+});
+
+// Normalize body-parser failures to the same public JSON error contract.
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  if (error.type === "entity.parse.failed")
+    return res.status(400).json({ error: "Invalid JSON body" });
+  if (error.type === "entity.too.large")
+    return res.status(413).json({ error: "Request body too large" });
+  console.error("Unhandled request error:", error);
+  return res.status(500).json({ error: "Internal server error" });
 });
 
 // Start server
