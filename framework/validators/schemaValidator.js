@@ -1,8 +1,10 @@
-const Ajv = require('ajv');
+const Ajv = require("ajv");
+const addFormats = require("ajv-formats");
 
 class SchemaValidator {
   constructor() {
     this.ajv = new Ajv({ allErrors: true });
+    addFormats(this.ajv);
   }
 
   validate(schema, data) {
@@ -11,7 +13,7 @@ class SchemaValidator {
 
     return {
       valid,
-      errors: validate.errors || []
+      errors: validate.errors || [],
     };
   }
 }

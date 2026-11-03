@@ -208,3 +208,7 @@ Queue ingestion derives the key from the bucket and object key. Use immutable, u
 ## CI report access
 
 Open the GitHub Actions run summary for pass, fail, flaky, and skipped execution counts. If an earlier step prevents a suite from running, the summary marks its report as not generated. Download the report artifact and open its HTML report to inspect test steps and generated failure artifacts. These execution counts are not code coverage percentages.
+
+## API response contracts
+
+The [OpenAPI 3.1 specification](openapi/healthcare-api.json) documents JSON response schemas, the optional retry header, and HTTP 409 conflicts. Contract tests validate success, health, validation-error, missing-resource, replay, and conflict responses against those schemas. Date and timestamp checks use full AJV format validation. Unit checks also reject malformed IDs, leaked persistence fields, and undocumented statuses. The shared claim schema is checked against the OpenAPI component to prevent drift.

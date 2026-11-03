@@ -1,8 +1,8 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.0",
   "info": {
     "title": "AI Healthcare Quality Platform API",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "servers": [
     {
@@ -14,7 +14,14 @@
       "get": {
         "responses": {
           "200": {
-            "description": "API is healthy"
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
           }
         }
       }
@@ -62,12 +69,60 @@
         },
         "responses": {
           "201": {
-            "description": "Claim created"
+            "description": "Claim created or original claim returned for an identical retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Claim"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Invalid claim"
+            "description": "Invalid claim",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Retry key already used with different claim fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "description": "An optional retry key returns the original claim on identical replays. A different payload using the same key returns 409. Unkeyed requests create independent claims.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Use a stable key for retries of one logical claim. Retained while its claim row exists."
+          }
+        ]
       }
     },
     "/api/claims/{claimId}": {
@@ -84,12 +139,110 @@
         ],
         "responses": {
           "200": {
-            "description": "Claim found"
+            "description": "Claim found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Claim"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Claim not found"
+            "description": "Claim not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Claim": {
+        "type": "object",
+        "required": [
+          "claimId",
+          "memberId",
+          "providerId",
+          "serviceDate",
+          "diagnosisCode",
+          "claimAmount",
+          "status",
+          "createdAt"
+        ],
+        "properties": {
+          "claimId": {
+            "type": "string",
+            "pattern": "^CLM-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "memberId": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "serviceDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "format": "date"
+          },
+          "diagnosisCode": {
+            "type": "string"
+          },
+          "claimAmount": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": ["RECEIVED"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "required": ["status", "service"],
+        "properties": {
+          "status": {
+            "const": "UP"
+          },
+          "service": {
+            "const": "healthcare-claims-api"
+          }
+        },
+        "additionalProperties": false
       }
     }
   }
