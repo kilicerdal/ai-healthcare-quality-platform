@@ -204,3 +204,7 @@ Demonstrate Senior SDET capabilities in:
 `POST /api/claims` accepts an optional `Idempotency-Key` header (up to 128 characters). The same key and normalized claim fields return the original claim with HTTP 201, including concurrent requests. Reusing the key with different claim fields returns HTTP 409. Requests without the header retain ordinary create behavior. Startup applies additive schema migrations, including existing Docker volumes.
 
 Queue ingestion derives the key from the bucket and object key. Use immutable, unique object keys for distinct claims. Deduplication lasts while the claim row is retained; this is not an exactly-once delivery guarantee.
+
+## CI report access
+
+Open the GitHub Actions run summary for pass, fail, flaky, and skipped execution counts. If an earlier step prevents a suite from running, the summary marks its report as not generated. Download the report artifact and open its HTML report to inspect test steps and generated failure artifacts. These execution counts are not code coverage percentages.

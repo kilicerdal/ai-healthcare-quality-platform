@@ -1,4 +1,3 @@
-
 name: Healthcare Quality Automation
 
 on:
@@ -64,7 +63,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
 
       - name: Install dependencies
@@ -132,7 +131,8 @@ jobs:
       - name: Run regression tests
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: reports/regression.json
-        run: npm run test:regression -- --reporter=list,json --workers=1
+          PLAYWRIGHT_HTML_OUTPUT_DIR: reports/regression-html
+        run: npm run test:regression -- --reporter=list,json,html --workers=1
 
       - name: Run deterministic AI validation tests
         run: |
@@ -145,10 +145,15 @@ jobs:
             tests/ai/aiCoverageRuleMismatch.spec.js \
             tests/ai/aiDuplicateCoverageDetector.spec.js \
             tests/ai/aiExecutionReporter.spec.js \
-            --reporter=list,json \
+            --reporter=list,json,html \
             --workers=1
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: reports/ai-validation.json
+          PLAYWRIGHT_HTML_OUTPUT_DIR: reports/ai-validation-html
+
+      - name: Test result summary
+        if: always()
+        run: node scripts/ci-summary.mjs reports/regression.json reports/ai-validation.json
 
       - name: Publish healthcare test metrics
         if: always() && github.event_name != 'pull_request'
@@ -168,7 +173,10 @@ jobs:
         with:
           name: playwright-report
           path: |
-            playwright-report/
+            reports/regression-html/
+            reports/ai-validation-html/
+            reports/regression.json
+            reports/ai-validation.json
             test-results/
             server.log
           retention-days: 7
