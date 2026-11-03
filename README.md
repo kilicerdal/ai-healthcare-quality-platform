@@ -1,6 +1,20 @@
 # AI Healthcare Quality Automation Platform
 
+[![Healthcare Quality Automation](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml/badge.svg)](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml)
+
 A Senior SDET portfolio project demonstrating API automation, database testing, event-driven integration testing, AI-assisted quality engineering, and CI/CD.
+
+## Review the code
+
+| Example | What it demonstrates |
+| --- | --- |
+| [Claims API](app/server.js) | Input validation, parameterized SQL, and response handling |
+| [API validation tests](tests/api/claimsValidation.spec.js) | Invalid inputs and boundary conditions |
+| [Contract tests](tests/contract/claimsContract.spec.js) | Response schema validation |
+| [Database tests](tests/database/claimsDatabase.spec.js) | Persisted claim verification |
+| [SQS ingestion tests](tests/e2e/sqsClaimsIngestion.spec.js) | Event-driven integration using simulated AWS services |
+| [AI scenario validator tests](tests/ai/aiScenarioValidator.spec.js) | Validation of AI-generated scenarios |
+| [CI workflow](.github/workflows/playwright.yml) | PostgreSQL/Moto setup, execution, and reports |
 
 ## Technology Stack
 
@@ -38,15 +52,15 @@ A Senior SDET portfolio project demonstrating API automation, database testing, 
 
 ## Automated Test Suites
 
-| Suite | Tests | Command |
-|---|---:|---|
-| Smoke | 2 | npm run test:smoke |
-| Sanity | 4 | npm run test:sanity |
-| Regression | 23 | npm run test:regression |
-| AI | 3 | npm run test:ai |
-| Contract | 2 | npm run test:contract |
+| Suite | Command |
+| --- | --- |
+| Smoke | `npm run test:smoke` |
+| Sanity | `npm run test:sanity` |
+| Regression (excludes tests tagged @ai) | `npm run test:regression` |
+| AI directory | `npm run test:ai` |
+| Contract | `npm run test:contract` |
 
-**26 unique automated tests.** Smoke and sanity tests overlap with regression.
+Suite selections can overlap. For current discovered tests, run `npx playwright test --list`; for executed totals and outcomes, inspect the corresponding CI run. Static test totals are omitted because the suite is evolving.
 
 ## Test Coverage
 
@@ -77,40 +91,33 @@ AI-generated recommendations do not automatically become application requirement
 
 ## CI/CD Pipeline
 
-GitHub Actions executes the following workflow:
+The [Healthcare Quality Automation workflow](.github/workflows/playwright.yml) runs on pushes to `main` and `fix/**`, pull requests to `main`, and manual dispatch.
 
-1. Checkout repository
-2. Install Node.js dependencies
-3. Initialize PostgreSQL
-4. Start Moto AWS simulator
-5. Initialize simulated S3 and SQS
-6. Start healthcare API
-7. Run smoke tests
-8. Run sanity tests
-9. Run regression tests
-10. Upload Playwright reports
+It provisions PostgreSQL and Moto, creates the claims table and simulated S3/SQS resources, starts the API, runs regression tests, and runs selected deterministic AI validation tests. Test artifacts and server logs are uploaded for investigation.
 
-The workflow is manually triggered.
-
-AI tests run locally because they require a local Ollama service.
+Tests that call a live local Ollama model require that service separately. The deterministic AI validation subset in CI does not imply that every model-dependent test runs there.
 
 ## Local Setup
 
 Prerequisites:
 
-- Node.js
+- Node.js 24 (matching CI)
 - PostgreSQL
 - Docker-compatible container runtime
 - Moto for simulated AWS services
 - Ollama for AI tests
 
-Install dependencies:
+Clone the project and install dependencies:
 
 ```bash
+git clone https://github.com/kilicerdal/ai-healthcare-quality-platform.git
+cd ai-healthcare-quality-platform
 npm ci
 ```
 
-Start the healthcare API after initializing the local PostgreSQL database:
+Before running the full regression suite, initialize PostgreSQL, the claims table, Moto, the `healthcare-claims-local` bucket, and the `healthcare-claims-queue` queue. The [CI workflow](.github/workflows/playwright.yml) contains the reference schema and initialization commands. Database connections use `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; configure these for your local environment.
+
+Start the healthcare API in a separate terminal after initializing the database:
 
 ```bash
 node app/server.js
