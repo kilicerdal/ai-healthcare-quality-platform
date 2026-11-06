@@ -16,7 +16,8 @@
     "demo:down": "docker compose down",
     "demo:test": "DB_USER=postgres DB_PASSWORD=local-demo-only playwright test --grep-invert @ai --workers=1",
     "test:unit": "node --test tests/unit/*.test.js",
-    "db:migrate": "node app/migrate.js"
+    "db:migrate": "node app/migrate.js",
+    "showcase:capture": "node scripts/capture-redelivery.js"
   },
   "keywords": [],
   "author": "",

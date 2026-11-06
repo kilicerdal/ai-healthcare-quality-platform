@@ -8,19 +8,13 @@ const {
   DeleteMessageCommand,
 } = require("@aws-sdk/client-sqs");
 
-const sqs = new SQSClient({
-  region: "us-east-1",
-  endpoint: "http://127.0.0.1:5000",
-  credentials: {
-    accessKeyId: "testing",
-    secretAccessKey: "testing",
-  },
-});
+const { localAWSConfig, loopbackURL } = require("../config/localEndpoints");
+const sqs = new SQSClient(localAWSConfig());
 
 class SQSQueueClient {
   constructor(queueUrl) {
     this.bucketName = "healthcare-claims-local";
-    this.queueUrl = queueUrl || "http://127.0.0.1:5000/123456789012/healthcare-claims-queue";
+    this.queueUrl = loopbackURL(queueUrl || `${localAWSConfig().endpoint}/123456789012/healthcare-claims-queue`, "Queue URL");
   }
 
   static async createIsolatedQueue(name) {

@@ -131,7 +131,10 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: "Internal server error" });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Healthcare Claims API running on port ${PORT}`);
-});
+// Normal CLI behavior is retained; isolated tests can own the listening socket.
+if (require.main === module) {
+  app.listen(PORT, process.env.API_HOST || "0.0.0.0", () => {
+    console.log(`Healthcare Claims API running on port ${PORT}`);
+  });
+}
+module.exports = app;

@@ -7,15 +7,8 @@ const {
 } = require("@aws-sdk/client-s3");
 
 // Local AWS emulator configuration
-const s3 = new S3Client({
-  region: "us-east-1",
-  endpoint: "http://127.0.0.1:5000",
-  forcePathStyle: true,
-  credentials: {
-    accessKeyId: "testing",
-    secretAccessKey: "testing",
-  },
-});
+const { localAWSConfig } = require("../config/localEndpoints");
+const s3 = new S3Client({ ...localAWSConfig(), forcePathStyle: true });
 
 class S3StorageClient {
   constructor() {

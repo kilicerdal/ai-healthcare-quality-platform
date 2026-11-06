@@ -216,3 +216,22 @@ The [OpenAPI 3.1 specification](openapi/healthcare-api.json) documents JSON resp
 ## Input boundaries
 
 Claim identifiers must be nonblank text within the existing database column limits (50 characters for member/provider IDs, 20 for diagnosis codes). Amounts must be positive, fit `NUMERIC(12,2)`, and have at most two decimal places. Sub-cent and overflowing inputs return HTTP 400 before persistence. Malformed JSON and oversized bodies use the documented JSON error shape. Integration checks verify rejected requests leave no claim records behind.
+
+## Recorded redelivery case study
+
+The companion eAI story uses actual synthetic-data capture from the local API, PostgreSQL and Moto. A deliberately failed queue acknowledgement follows a committed claim. Redelivery must return the original claim, while changed content at the same object key must conflict. Amounts are synthetic input values, not payments.
+
+The clients support alternate loopback ports through `LOCAL_AWS_ENDPOINT` and `CLAIMS_API_URL`, and reject non-loopback destinations. Explicit synthetic credentials avoid AWS credential discovery. `DB_SCHEMA` is limited to generated `health_test_*` schemas for isolated capture.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-simulator.txt
+.venv/bin/moto_server -H 127.0.0.1 -p 4311
+# In another terminal, with the disposable eai_quality PostgreSQL lab on 55432:
+npm ci
+npm run showcase:capture
+```
+
+The capture command requires a clean committed checkout so the exported source commit is exact. It writes `artifacts/claim-redelivery.json`, uses a fresh schema, queue and object, and cleans them up. No real AWS account, live model or patient data is used.
+
+The existing CI workflow now runs only for public repositories on a standard Ubuntu runner. It retains job summaries and logs rather than uploading report artifacts or creating package caches. The older artifact-download directions above describe previous workflow runs; current reports can be generated locally. This keeps the current workflow within free public-runner execution and avoids added artifact storage. It does not re-enable the separate Playwright showcase repository's disabled workflows.

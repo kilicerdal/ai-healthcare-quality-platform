@@ -1,4 +1,5 @@
 const { createHash } = require("node:crypto");
+const { claimsAPIURL } = require("../framework/config/localEndpoints");
 const { S3StorageClient } = require("../framework/clients/s3Client");
 
 class ClaimsProcessor {
@@ -15,7 +16,7 @@ class ClaimsProcessor {
     const claimData = await this.s3Client.getClaim(fileName);
 
     // 2. Submit claim to Healthcare Claims API
-    const response = await this.request.post("http://localhost:3000/api/claims", {
+    const response = await this.request.post(`${claimsAPIURL()}/api/claims`, {
       data: claimData,
       headers: {
         "Idempotency-Key": createHash("sha256")

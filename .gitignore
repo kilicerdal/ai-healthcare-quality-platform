@@ -30,3 +30,7 @@ coverage/
 
 # Generated quality dashboard reports
 reports/dashboard/
+
+# Local simulator and captured evidence
+.venv/
+artifacts/
