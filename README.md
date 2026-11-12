@@ -4,6 +4,10 @@
 
 A Senior SDET portfolio project demonstrating API automation, database testing, event-driven integration testing, AI-assisted quality engineering, and CI/CD.
 
+**Start here:** [75-second walkthrough](docs/media/walkthrough.webm?raw=true) · [Sample report](docs/samples/ai-validation-report.zip?raw=true) · [Engineering decisions](docs/ENGINEERING.md) · [Run locally](#one-command-demo-environment)
+
+The main failure case is a queue acknowledgement that fails after a claim is committed. Redelivery must return the original claim, while changed content at the same key must conflict. The project uses synthetic data, PostgreSQL, and locally simulated AWS services.
+
 ## See the results
 
 ![Actual deterministic AI validation report](docs/images/ai-validation-report.jpg)
@@ -103,7 +107,7 @@ AI-generated recommendations do not automatically become application requirement
 
 The [Healthcare Quality Automation workflow](.github/workflows/playwright.yml) runs on pushes to `main` and `fix/**`, pull requests to `main`, and manual dispatch.
 
-It provisions PostgreSQL and Moto, creates the claims table and simulated S3/SQS resources, starts the API, runs regression tests, and runs selected deterministic AI validation tests. Test artifacts and server logs are uploaded for investigation.
+It provisions PostgreSQL and Moto, creates the claims table and simulated S3/SQS resources, starts the API, runs regression tests, and runs selected deterministic AI validation tests. The current workflow retains job summaries and logs for investigation. Generate HTML reports locally; older workflow runs may contain uploaded artifacts.
 
 Tests that call a live local Ollama model require that service separately. The deterministic AI validation subset in CI does not imply that every model-dependent test runs there.
 
@@ -207,7 +211,7 @@ Queue ingestion derives the key from the bucket and object key. Use immutable, u
 
 ## CI report access
 
-Open the GitHub Actions run summary for pass, fail, flaky, and skipped execution counts. If an earlier step prevents a suite from running, the summary marks its report as not generated. Download the report artifact and open its HTML report to inspect test steps and generated failure artifacts. These execution counts are not code coverage percentages.
+Open the GitHub Actions run summary for pass, fail, flaky, and skipped execution counts. If an earlier step prevents a suite from running, the summary marks its report as not generated. Current CI retains summaries and logs without uploading report artifacts. To inspect HTML test steps and failure evidence, run the local demo and open its report with `npx playwright show-report`. Artifacts on older runs describe those historical executions. These execution counts are not code coverage percentages.
 
 ## API response contracts
 
