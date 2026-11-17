@@ -8,6 +8,8 @@ A Senior SDET portfolio project demonstrating API automation, database testing, 
 
 The main failure case is a queue acknowledgement that fails after a claim is committed. Redelivery must return the original claim, while changed content at the same key must conflict. The project uses synthetic data, PostgreSQL, and locally simulated AWS services.
 
+**How this differs from [Healthcare Quality Lab](https://github.com/kilicerdal/healthcare-quality-lab):** this platform focuses on API contracts, PostgreSQL persistence, and simulated S3/SQS message processing. The lab focuses on business-rule correctness, independent checking of AI expectations, review gates, and payment concurrency/recovery.
+
 ## See the results
 
 ![Actual deterministic AI validation report](docs/images/ai-validation-report.jpg)
@@ -239,6 +241,10 @@ npm run showcase:capture
 The capture command requires a clean committed checkout so the exported source commit is exact. It writes `artifacts/claim-redelivery.json`, uses a fresh schema, queue and object, and cleans them up. No real AWS account, live model or patient data is used.
 
 The existing CI workflow now runs only for public repositories on a standard Ubuntu runner. It retains job summaries and logs rather than uploading report artifacts or creating package caches. The older artifact-download directions above describe previous workflow runs; current reports can be generated locally. This keeps the current workflow within free public-runner execution and avoids added artifact storage. It does not re-enable the separate Playwright showcase repository's disabled workflows.
+
+## Contributing and maintenance
+
+[Contributing](CONTRIBUTING.md) · [Security reporting](SECURITY.md) · [Dependency maintenance](docs/DEPENDENCY_MAINTENANCE.md).
 
 ## License
 
