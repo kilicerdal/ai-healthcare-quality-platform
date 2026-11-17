@@ -239,3 +239,7 @@ npm run showcase:capture
 The capture command requires a clean committed checkout so the exported source commit is exact. It writes `artifacts/claim-redelivery.json`, uses a fresh schema, queue and object, and cleans them up. No real AWS account, live model or patient data is used.
 
 The existing CI workflow now runs only for public repositories on a standard Ubuntu runner. It retains job summaries and logs rather than uploading report artifacts or creating package caches. The older artifact-download directions above describe previous workflow runs; current reports can be generated locally. This keeps the current workflow within free public-runner execution and avoids added artifact storage. It does not re-enable the separate Playwright showcase repository's disabled workflows.
+
+## License
+
+No open-source license has been granted for this project's original code. It is published for portfolio review; public visibility does not grant a general reuse license. Third-party dependencies retain their own licenses.
