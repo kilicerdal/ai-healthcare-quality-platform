@@ -47,24 +47,22 @@ The complete Docker setup and regression suite also passed in [CI run 4166349849
 
 ## Architecture
 
-```text
-                 Playwright Test Framework
-                           |
-              +------------+------------+
-              |                         |
-              v                         v
-        Healthcare API             AI Test Layer
-              |                         |
-              v                  Ollama / Qwen2.5
-         PostgreSQL
-              ^
-              |
-       Claims Processor
-              ^
-              |
-          S3 / SQS
-       (Moto Simulator)
+```mermaid
+flowchart LR
+  Tests[Playwright API contract and database tests] --> API[Claims REST API]
+  API --> DB[(PostgreSQL)]
+  Tests --> Storage[Moto simulated S3]
+  Tests --> Queue[Moto simulated SQS]
+  Queue --> Processor[Claim processor]
+  Storage --> Processor
+  Processor --> API
+  Processor --> Ack[Acknowledge only after successful processing]
+  Ack --> Queue
+  Rules[Authored AI scenarios] --> Validators[Deterministic rule validators]
+  Optional[Optional local Ollama] --> Validators
 ```
+
+The queue may redeliver after an API commit if acknowledgement fails. A stable object-derived identity and database uniqueness protect the retained claim from duplicate ingestion; this is not exactly-once infrastructure delivery. Moto stays local and uses synthetic credentials. Optional live model tests are separate from deterministic validation.
 
 ## Automated Test Suites
 
@@ -115,7 +113,7 @@ Tests that call a live local Ollama model require that service separately. The d
 
 ## One-command demo environment
 
-Requires Docker with Compose v2, Node.js 24, npm, and available local ports 3000, 5000, and 5432.
+Requires a running Docker engine with Compose v2, Node.js 24, npm, and available local ports 3000, 5000, and 5432. Check `docker info` before starting; installing the Docker CLI alone does not start an engine.
 
 ```bash
 npm ci
@@ -130,7 +128,17 @@ npx playwright show-report
 npm run demo:down
 ```
 
-Stopping preserves the PostgreSQL volume. The credentials are local demo values and ports bind to loopback. This environment uses synthetic data and is intended for local development. If a port is occupied, stop the conflicting service first. Container startup is validated by the [Demo environment workflow](.github/workflows/demo-environment.yml).
+On macOS, AirPlay Receiver may already own port 5000. Keep that service running and choose another loopback port for Moto:
+
+```bash
+MOTO_PORT=55000 npm run demo:up
+LOCAL_AWS_ENDPOINT=http://127.0.0.1:55000 npm run demo:test
+MOTO_PORT=55000 npm run demo:down
+```
+
+`MOTO_PORT` changes only the host mapping; containers still reach Moto on port 5000. Keep `LOCAL_AWS_ENDPOINT` aligned when running tests on the host. Ports 3000 and 5432 must still be available. For isolated parallel checkouts, pass a unique `COMPOSE_PROJECT_NAME` to all three commands so containers and volumes are not shared.
+
+Stopping preserves the PostgreSQL volume. The API image runs its idempotent schema migration before serving, so setup does not require a host SQL bind mount (which can fail when a VM-based Docker engine cannot share the checkout directory). The credentials are local demo values and ports bind to loopback. This environment uses synthetic data and is intended for local development. Use the alternate Moto port above when needed; ports 3000 and 5432 must be free. Container startup is validated by the [Demo environment workflow](.github/workflows/demo-environment.yml).
 
 ## Local Setup
 
@@ -229,8 +237,10 @@ The companion eAI story uses actual synthetic-data capture from the local API, P
 
 The clients support alternate loopback ports through `LOCAL_AWS_ENDPOINT` and `CLAIMS_API_URL`, and reject non-loopback destinations. Explicit synthetic credentials avoid AWS credential discovery. `DB_SCHEMA` is limited to generated `health_test_*` schemas for isolated capture.
 
+Requires Python 3.10 or newer for the pinned Moto simulator (CI uses Python 3.13). On macOS, the system Python may be older; select a supported interpreter explicitly.
+
 ```bash
-python3 -m venv .venv
+python3.13 -m venv .venv
 .venv/bin/pip install -r requirements-simulator.txt
 .venv/bin/moto_server -H 127.0.0.1 -p 4311
 # In another terminal, with the disposable eai_quality PostgreSQL lab on 55432:

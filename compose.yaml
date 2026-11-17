@@ -10,7 +10,6 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - claims-data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/claims.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d healthcare_quality"]
       interval: 2s
@@ -19,7 +18,7 @@ services:
   moto:
     image: motoserver/moto:latest
     ports:
-      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:${MOTO_PORT:-5000}:5000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
       interval: 2s
