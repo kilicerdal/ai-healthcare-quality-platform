@@ -24,7 +24,7 @@
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.65.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1"
   },
