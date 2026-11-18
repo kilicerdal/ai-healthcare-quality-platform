@@ -2,9 +2,11 @@
 
 ![Node 24](https://img.shields.io/badge/Node-24-339933?logo=nodedotjs) ![Tests: Playwright](https://img.shields.io/badge/Tests-Playwright-2EAD33) [![MIT license](https://img.shields.io/github/license/kilicerdal/ai-healthcare-quality-platform)](LICENSE)
 
+**Review in five minutes:** [What to run, which failure to inspect, and what it proves](docs/REVIEWER_GUIDE.md) · [Evidence provenance](docs/EVIDENCE.md).
+
 [![Healthcare Quality Automation](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml/badge.svg)](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml)
 
-A Senior SDET portfolio project demonstrating API automation, database testing, event-driven integration testing, AI-assisted quality engineering, and CI/CD.
+A Senior SDET portfolio project demonstrating API automation, database testing and event-driven integration. Default assertions and CI are deterministic; optional local AI suggests scenarios and explanations rather than defining business truth. Synthetic data and loopback demo services only; no production authentication or real AWS deployment.
 
 **Start here:** [75-second walkthrough](docs/media/walkthrough.webm?raw=true) · [Sample report](docs/samples/ai-validation-report.zip?raw=true) · [Engineering decisions](docs/ENGINEERING.md) · [Run locally](#one-command-demo-environment)
 
@@ -14,7 +16,9 @@ The main failure case is a queue acknowledgement that fails after a claim is com
 
 ## See the results
 
-![Actual deterministic AI validation report](docs/images/ai-validation-report.jpg)
+![Recorded local deterministic AI validation report, November 3, 2026](docs/images/ai-validation-report.jpg)
+
+*Historical selected eight-test report; predates later retry/input-boundary controls. Capture commit was not recorded. [Evidence inventory and current CI](docs/EVIDENCE.md).*
 
 [75-second captioned walkthrough](docs/media/walkthrough.webm?raw=true) · [Download sample HTML report ZIP](docs/samples/ai-validation-report.zip?raw=true)
 
@@ -115,6 +119,8 @@ Tests that call a live local Ollama model require that service separately. The d
 
 ## One-command demo environment
 
+**Recommended reviewer path.** Manual [local setup](#local-setup) is for implementation work; [live Ollama tests](#ai-assisted-testing) require a separate optional model.
+
 Requires a running Docker engine with Compose v2, Node.js 24, npm, and available local ports 3000, 5000, and 5432. Check `docker info` before starting; installing the Docker CLI alone does not start an engine.
 
 ```bash
@@ -143,6 +149,8 @@ MOTO_PORT=55000 npm run demo:down
 Stopping preserves the PostgreSQL volume. The API image runs its idempotent schema migration before serving, so setup does not require a host SQL bind mount (which can fail when a VM-based Docker engine cannot share the checkout directory). The credentials are local demo values and ports bind to loopback. This environment uses synthetic data and is intended for local development. Use the alternate Moto port above when needed; ports 3000 and 5432 must be free. Container startup is validated by the [Demo environment workflow](.github/workflows/demo-environment.yml).
 
 ## Local Setup
+
+**Developer path.** For a quick review use the Docker demo above. Ollama is optional and only needed for model-dependent tests.
 
 Prerequisites:
 
@@ -252,7 +260,7 @@ npm run showcase:capture
 
 The capture command requires a clean committed checkout so the exported source commit is exact. It writes `artifacts/claim-redelivery.json`, uses a fresh schema, queue and object, and cleans them up. No real AWS account, live model or patient data is used.
 
-The existing CI workflow now runs only for public repositories on a standard Ubuntu runner. It retains job summaries and logs rather than uploading report artifacts or creating package caches. The older artifact-download directions above describe previous workflow runs; current reports can be generated locally. This keeps the current workflow within free public-runner execution and avoids added artifact storage. It does not re-enable the separate Playwright showcase repository's disabled workflows.
+The existing CI workflow now runs only for public repositories on a standard Ubuntu runner. It retains job summaries and logs rather than uploading report artifacts or creating package caches. The older artifact-download directions above describe previous workflow runs; current reports can be generated locally. This keeps the current workflow within free public-runner execution and avoids added artifact storage. The separate Playwright showcase now has dedicated offline CI; its five archived workflows and paid integrations remain disabled.
 
 ## Contributing and maintenance
 
