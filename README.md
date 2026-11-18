@@ -1,5 +1,7 @@
 # AI Healthcare Quality Automation Platform
 
+![Node 24](https://img.shields.io/badge/Node-24-339933?logo=nodedotjs) ![Tests: Playwright](https://img.shields.io/badge/Tests-Playwright-2EAD33) [![MIT license](https://img.shields.io/github/license/kilicerdal/ai-healthcare-quality-platform)](LICENSE)
+
 [![Healthcare Quality Automation](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml/badge.svg)](https://github.com/kilicerdal/ai-healthcare-quality-platform/actions/workflows/playwright.yml)
 
 A Senior SDET portfolio project demonstrating API automation, database testing, event-driven integration testing, AI-assisted quality engineering, and CI/CD.
@@ -259,3 +261,7 @@ The existing CI workflow now runs only for public repositories on a standard Ubu
 ## License
 
 This project's original code is licensed under the [MIT License](LICENSE), copyright (c) 2026 Erdal Kilic. Third-party dependencies and separately attributed materials retain their own licenses.
+
+## Compatibility and maintenance
+
+[Supported versions, quick/full checks, dependency decisions and upgrade policy](docs/MAINTENANCE.md). Historical evidence stays dated; current CI status is linked above.
